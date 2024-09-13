@@ -48,11 +48,21 @@ func HttpHtmlError(w http.ResponseWriter, error string, code int) {
 }
 
 // Provides algorithm based on config enum
-func GetAlgo(a configProvider.ALGORITHM_TYPE) (algo Algorithm) {
+func GetAlgo(a configProvider.ALGORITHM_TYPE, serverPool *ServerPool) (algo Algorithm) {
 	algo = GetRoundRobin()
 	switch a {
 	case configProvider.RoundRobin:
 		algo = GetRoundRobin()
+	case configProvider.WeightedRoundRobin:
+		algo = GetWeightedRoundRobin(serverPool)
 	}
 	return
+}
+
+// Used in Weighted Round Robin
+func _gcd(a, b int64) int64 {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
 }

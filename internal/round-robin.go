@@ -1,13 +1,13 @@
 package lb
 
 import (
-	"sync"
+	resetableonce "nanoLB/internal/resetableOnce"
 	"sync/atomic"
 )
 
 var (
 	roundRobin     *RoundRobin
-	onceRoundRobin sync.Once
+	onceRoundRobin *resetableonce.ResettableOnce = resetableonce.NewResettableOnce()
 )
 
 type RoundRobin struct {
@@ -19,10 +19,10 @@ func (r *RoundRobin) GetNext(sp *ServerPool) *Server {
 		return nil
 	}
 	next := r.nextIndex(uint64(len(sp.pool)))
-	l := len(sp.pool) + next // start from next and move a full cycle
+	l := len(sp.pool) + next
 	for i := next; i < l; i++ {
-		idx := i % len(sp.pool)       // take an index by modding
-		if sp.pool[idx].IsHealthy() { // if we have an alive backend, use it and store if its not the original one
+		idx := i % len(sp.pool)
+		if sp.pool[idx].IsHealthy() {
 			if i != next {
 				atomic.StoreUint64(&r.current, uint64(idx))
 			}
@@ -38,7 +38,7 @@ func (r *RoundRobin) nextIndex(poolLen uint64) int {
 
 func GetRoundRobin() *RoundRobin {
 	onceRoundRobin.Do(func() {
-		roundRobin = &RoundRobin{current: 0}
+		roundRobin = &RoundRobin{current: ^uint64(0)}
 	})
 	return roundRobin
 }

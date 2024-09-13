@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	lb "nanoLB/internal"
+	"nanoLB/internal/config"
 	"net/http"
 	"strings"
 )
@@ -27,9 +28,12 @@ func main() {
 	fmt.Println("Port:", port)
 	fmt.Println("Config Path:", configPath)
 
+	lb.Config.Algorithm = config.WeightedRoundRobin
 	serverUrls := strings.Split(servers, ",")
-	for _, url := range serverUrls {
-		lb.GetServerPool().Add(lb.GetServer(url))
+	// TODO: Only for testing, remove afterwards
+	w := []int64{5, 2, 10}
+	for c, url := range serverUrls {
+		lb.GetServerPool().Add(lb.GetServer(url, w[c]))
 		log.Printf("Added server to pool: %s\n", url)
 	}
 

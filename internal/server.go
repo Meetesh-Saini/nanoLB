@@ -2,6 +2,7 @@ package lb
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -15,6 +16,7 @@ type Server struct {
 	ReverseProxy *httputil.ReverseProxy
 	Healthy      bool
 	Connections  uint
+	Weight       int64
 	mux          sync.RWMutex
 }
 
@@ -36,7 +38,7 @@ func GetServerPool() *ServerPool {
 	return serverPool
 }
 
-func GetServer(serverURL string) *Server {
+func GetServer(serverURL string, weight int64) *Server {
 	serverUrl, err := url.Parse(serverURL)
 	if err != nil {
 		log.Fatal(err)
@@ -45,8 +47,11 @@ func GetServer(serverURL string) *Server {
 	proxy := httputil.NewSingleHostReverseProxy(serverUrl)
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
 		log.Printf("[%s] %s\n", serverUrl.Host, e.Error())
+		if errors.Is(e, context.Canceled) {
+			return
+		}
 		retries := GetRetries(request)
-		if retries < config.MaxRetries {
+		if retries < Config.MaxRetries {
 			select {
 			case <-time.After(10 * time.Millisecond):
 				ctx := context.WithValue(request.Context(), Retry, retries+1)
@@ -71,6 +76,7 @@ func GetServer(serverURL string) *Server {
 		Healthy:      true,
 		ReverseProxy: proxy,
 		Connections:  0,
+		Weight:       weight,
 	}
 }
 
