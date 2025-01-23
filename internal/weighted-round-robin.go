@@ -1,7 +1,6 @@
 package lb
 
 import (
-	"fmt"
 	resetableonce "nanoLB/internal/resetableOnce"
 	"sync/atomic"
 )
@@ -91,9 +90,6 @@ func GetWeightedRoundRobin(pool *ServerPool) *WeightedRoundRobin {
 	onceWeightedRoundRobin.Do(func() {
 		weightedRoundRobin = &WeightedRoundRobin{current: ^uint64(0)}
 		weightedRoundRobin.MakeWeights(pool)
-		for _, v := range weightedRoundRobin.indexLookup {
-			fmt.Println(v)
-		}
 	})
 	return weightedRoundRobin
 }

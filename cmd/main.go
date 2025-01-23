@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	lb "nanoLB/internal"
 	"nanoLB/internal/config"
+	"nanoLB/internal/log"
 	"net/http"
 	"strings"
 )
@@ -30,12 +30,18 @@ func main() {
 	fmt.Println("Config Path:", configPath)
 
 	lb.Config.Algorithm = config.WeightedRoundRobin
+
+	if err := log.Init(); err != nil {
+		fmt.Printf("Error initializing logger: %v\n", err)
+		return
+	}
+
 	serverUrls := strings.Split(servers, ",")
 	// TODO: Only for testing, remove afterwards
 	w := []int64{5, 2, 10, 3, 7, 4}
 	for c, url := range serverUrls {
 		lb.GetServerPool().Add(lb.GetServer(url, w[c]))
-		log.Printf("Added server to pool: %s\n", url)
+		log.Logger.Infof("Added server to pool: %s", url)
 	}
 
 	server := http.Server{
@@ -48,8 +54,8 @@ func main() {
 
 	go lb.HealthCheckRoutine(healthCheckCtx)
 
-	log.Printf("Load Balancer started at :%d\n", port)
+	log.Logger.Infof("Load Balancer started at :%d", port)
 	if err := server.ListenAndServe(); err != nil {
-		log.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 }

@@ -13,6 +13,10 @@ type Config struct {
 	HealthCheckTimeout        time.Duration
 	MaxConcurrentHealthChecks int
 	HealthCheckInterval       time.Duration
+	LogFile                   string
+	LogLevel                  string
+	LogFormat                 string
+	LogOutput                 string
 }
 
 var (
@@ -29,6 +33,10 @@ func GetConfig() *Config {
 			HealthCheckTimeout:        2 * time.Second,
 			MaxConcurrentHealthChecks: 256,
 			HealthCheckInterval:       10 * time.Second,
+			LogFile:                   "./nanolb.log",
+			LogLevel:                  "info",
+			LogFormat:                 "text",
+			LogOutput:                 "both",
 		}
 	})
 	return configInstance

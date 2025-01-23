@@ -2,7 +2,7 @@ package lb
 
 import (
 	"context"
-	"log"
+	"nanoLB/internal/log"
 	"net"
 	"sync"
 	"time"
@@ -55,7 +55,7 @@ func (sp *ServerPool) HealthCheck() {
 	for result := range ch {
 		sp.SetServerHealth(result.server.URL.String(), result.isHealthy)
 		if result.isHealthy {
-			log.Printf("%s [healthy]", result.server.URL.String())
+			log.Logger.Infof("%s [healthy]", result.server.URL.String())
 		}
 	}
 }
@@ -63,7 +63,7 @@ func (sp *ServerPool) HealthCheck() {
 func GetServerHealth(s *Server) bool {
 	conn, err := net.DialTimeout("tcp", s.URL.Host, Config.HealthCheckTimeout)
 	if err != nil {
-		log.Printf("%s [dead] : %s", s.URL.String(), err)
+		log.Logger.Infof("%s [dead] : %s", s.URL.String(), err)
 		return false
 	}
 	defer conn.Close()
@@ -78,16 +78,16 @@ func HealthCheckRoutine(ctx context.Context) {
 		select {
 		case <-t.C:
 			healthChechMutex.Lock()
-			log.Println("Starting health check...")
+			log.Logger.Info("Starting health check...")
 
 			// Run health check and log success or failure
 			GetServerPool().HealthCheck()
-			log.Println("Health check completed successfully")
+			log.Logger.Info("Health check completed successfully")
 
 			healthChechMutex.Unlock() // Release lock after the health check completes
 
 		case <-ctx.Done():
-			log.Println("Health check routine stopping")
+			log.Logger.Info("Health check routine stopping")
 			return
 		}
 	}

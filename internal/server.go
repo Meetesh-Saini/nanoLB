@@ -3,7 +3,7 @@ package lb
 import (
 	"context"
 	"errors"
-	"log"
+	"nanoLB/internal/log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -41,12 +41,12 @@ func GetServerPool() *ServerPool {
 func GetServer(serverURL string, weight int64) *Server {
 	serverUrl, err := url.Parse(serverURL)
 	if err != nil {
-		log.Fatal(err)
+		log.Logger.Fatal(err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(serverUrl)
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
-		log.Printf("[%s] %s\n", serverUrl.String(), e.Error())
+		log.Logger.Infof("[%s] %s", serverUrl.String(), e.Error())
 		if errors.Is(e, context.Canceled) {
 			return
 		}
@@ -63,12 +63,12 @@ func GetServer(serverURL string, weight int64) *Server {
 
 		// if the same request routing for few attempts with different backends, increase the count
 		attempts := GetAttempts(request)
-		log.Printf("%s(%s) Attempting retry %d\n", request.RemoteAddr, request.URL.Path, attempts)
+		log.Logger.Infof("%s(%s) Attempting retry %d", request.RemoteAddr, request.URL.Path, attempts)
 		ctx := context.WithValue(request.Context(), Attempts, attempts+1)
 		LoadBalancer(writer, request.WithContext(ctx))
 	}
 
-	log.Printf("Configured server: %s\n", serverUrl)
+	log.Logger.Infof("Configured server: %s", serverUrl)
 	return &Server{
 		URL:          serverUrl,
 		Healthy:      true,
