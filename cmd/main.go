@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -31,7 +32,7 @@ func main() {
 	lb.Config.Algorithm = config.WeightedRoundRobin
 	serverUrls := strings.Split(servers, ",")
 	// TODO: Only for testing, remove afterwards
-	w := []int64{5, 2, 10}
+	w := []int64{5, 2, 10, 3, 7, 4}
 	for c, url := range serverUrls {
 		lb.GetServerPool().Add(lb.GetServer(url, w[c]))
 		log.Printf("Added server to pool: %s\n", url)
@@ -41,6 +42,11 @@ func main() {
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: http.HandlerFunc(lb.LoadBalancer),
 	}
+
+	healthCheckCtx, healthCheckCtxCancel := context.WithCancel(context.Background())
+	defer healthCheckCtxCancel()
+
+	go lb.HealthCheckRoutine(healthCheckCtx)
 
 	log.Printf("Load Balancer started at :%d\n", port)
 	if err := server.ListenAndServe(); err != nil {

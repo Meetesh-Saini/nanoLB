@@ -46,17 +46,15 @@ func GetServer(serverURL string, weight int64) *Server {
 
 	proxy := httputil.NewSingleHostReverseProxy(serverUrl)
 	proxy.ErrorHandler = func(writer http.ResponseWriter, request *http.Request, e error) {
-		log.Printf("[%s] %s\n", serverUrl.Host, e.Error())
+		log.Printf("[%s] %s\n", serverUrl.String(), e.Error())
 		if errors.Is(e, context.Canceled) {
 			return
 		}
 		retries := GetRetries(request)
 		if retries < Config.MaxRetries {
-			select {
-			case <-time.After(10 * time.Millisecond):
-				ctx := context.WithValue(request.Context(), Retry, retries+1)
-				proxy.ServeHTTP(writer, request.WithContext(ctx))
-			}
+			<-time.After(10 * time.Millisecond)
+			ctx := context.WithValue(request.Context(), Retry, retries+1)
+			proxy.ServeHTTP(writer, request.WithContext(ctx))
 			return
 		}
 
