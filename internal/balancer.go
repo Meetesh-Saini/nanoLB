@@ -6,11 +6,10 @@ import (
 	"net/http"
 )
 
-var Config = configProvider.GetConfig()
-
 func LoadBalancer(w http.ResponseWriter, r *http.Request) {
+	var Config = configProvider.GetConfig()
 	attempts := GetAttempts(r)
-	log.Logger.Info("Trying", attempts, "time for", r.RemoteAddr)
+	log.Logger.Infof("Trying %v time for %v", attempts, r.RemoteAddr)
 	if attempts > Config.MaxAttempts {
 		HttpHtmlError(w, ServiceUnavailable.String(), http.StatusServiceUnavailable)
 		return
@@ -18,7 +17,7 @@ func LoadBalancer(w http.ResponseWriter, r *http.Request) {
 	algo := GetAlgo(Config.Algorithm, GetServerPool())
 	server := GetServerPool().next(algo)
 	if server != nil {
-		log.Logger.Info("Serving with", server.URL.String(), "to", r.RemoteAddr)
+		log.Logger.Infof("Serving with %v to %v", server.URL.String(), r.RemoteAddr)
 		server.ReverseProxy.ServeHTTP(w, r)
 		return
 	}

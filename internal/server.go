@@ -3,6 +3,7 @@ package lb
 import (
 	"context"
 	"errors"
+	"nanoLB/internal/config"
 	"nanoLB/internal/log"
 	"net/http"
 	"net/http/httputil"
@@ -51,7 +52,7 @@ func GetServer(serverURL string, weight int64) *Server {
 			return
 		}
 		retries := GetRetries(request)
-		if retries < Config.MaxRetries {
+		if retries < config.GetConfig().MaxRetries {
 			<-time.After(10 * time.Millisecond)
 			ctx := context.WithValue(request.Context(), Retry, retries+1)
 			proxy.ServeHTTP(writer, request.WithContext(ctx))

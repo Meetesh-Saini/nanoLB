@@ -2,6 +2,7 @@ package lb
 
 import (
 	"context"
+	"nanoLB/internal/config"
 	"nanoLB/internal/log"
 	"net"
 	"sync"
@@ -24,7 +25,7 @@ func (sp *ServerPool) HealthCheck() {
 	}, len(sp.pool))
 
 	// Limit concurrent health checks
-	guard := make(chan struct{}, Config.MaxConcurrentHealthChecks)
+	guard := make(chan struct{}, config.GetConfig().MaxConcurrentHealthChecks)
 
 	for _, s := range sp.pool {
 		wg.Add(1)
@@ -61,7 +62,7 @@ func (sp *ServerPool) HealthCheck() {
 }
 
 func GetServerHealth(s *Server) bool {
-	conn, err := net.DialTimeout("tcp", s.URL.Host, Config.HealthCheckTimeout)
+	conn, err := net.DialTimeout("tcp", s.URL.Host, config.GetConfig().HealthCheckTimeout)
 	if err != nil {
 		log.Logger.Infof("%s [dead] : %s", s.URL.String(), err)
 		return false
@@ -71,7 +72,7 @@ func GetServerHealth(s *Server) bool {
 }
 
 func HealthCheckRoutine(ctx context.Context) {
-	t := time.NewTicker(Config.HealthCheckInterval)
+	t := time.NewTicker(config.GetConfig().HealthCheckInterval)
 	defer t.Stop()
 
 	for {
